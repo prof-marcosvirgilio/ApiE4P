@@ -10,8 +10,7 @@ $database = "marcosvir_e4p";
 
 // Add the following lines to set CORS headers
 header("Access-Control-Allow-Origin: *"); // Allow requests from any origin (you can restrict this in a production environment)
-header("Access-Control-Allow-Methods: POST"); // Allow POST requests
-header("Access-Control-Allow-Methods: GET"); // Allow POST requests
+header("Access-Control-Allow-Methods: POST, GET"); // Allow POST and GET requests
 header("Access-Control-Allow-Headers: Content-Type"); // Allow Content-Type header
 
 $con = new mysqli($servername, $username, $password, $database);
@@ -20,15 +19,20 @@ if ($con->connect_error) {
     die("Connection failed: " . $con->connect_error);
 }
 
-//Retrieve the request parameter
+// Retrieve the request parameter
 $stringParam = file_get_contents('php://input');
-//convert to JSON parameter
-$jsonParam = json_decode($stringParam, true);
-//vendo se veio array json
-if ($stringParam[0] == '['){
-    //pegando o primeiro objeto do json array - filtro da consulta
-    $jsonParam = $jsonParam[0];
-} 
+
+// Convert to JSON parameter
+$jsonParamRequest = json_decode($stringParam, true);
+
+// Checking if it's a JSON array
+if ($stringParam[0] == '[') {
+    $jsonParam = $jsonParamRequest[0]; // Take the first object of the JSON array as the filter
+} else {
+    $jsonParam = $jsonParamRequest; // Keep what was received if it's a JSON object
+}
+
+$json = array();// Create a response array
 
 if (!empty($jsonParam)) {
     // Prepare the WHERE clause
@@ -43,52 +47,27 @@ if (!empty($jsonParam)) {
     // Prepare the SQL statement for selecting data from the 'animal' table
     $consulta = "SELECT idanimal, nmanimal, nmtutor, idcor, idporte FROM animal $whereClause";
 
+    // Set the content type to JSON
+    header('Content-Type: application/json');
+
+    // Output the JSON data
+
+    //echo $consulta;
+
     $result = $con->query($consulta);
 
-    $json = array();
-
-    if ($result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            // Convert character encoding for each field
-            foreach ($row as &$value) {
-                $value = mb_convert_encoding($value, 'UTF-8', 'ISO-8859-1');
+    if ($result) {
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                    $json[] = $row;
             }
-
-            $animal = array(
-                "idanimal" => $row['idanimal'],
-                "nmanimal" => $row['nmanimal'],
-                "nmtutor" => $row['nmtutor'],
-                "idcor" => $row['idcor'],
-                "idporte" => $row['idporte']
-            );
-            $json[] = $animal;
-        }
-    } else {
-        $animal = array(
-            "idanimal" => 0,
-            "nmanimal" => "",
-            "nmtutor" => "",
-            "idcor" => 0,
-            "idporte" => 0
-        );
-        $json[] = $animal;
+        } 
     }
-
-    if ($json) {
-        $encoded_json = json_encode($json);
-        if ($encoded_json === false) {
-            echo "Error encoding JSON: " . json_last_error_msg();
-        } else {
-            header('Content-Type: application/json; charset=utf-8');
-            echo $encoded_json;
-        }
-    } else {
-        echo "Empty JSON data.";
-    }
-
-    $result->free_result();
-}
-
+} 
+$result->free_result();
 $con->close();
+// Send the JSON response
+header('Content-Type: application/json; charset=utf-8');
+echo json_encode($json);
 
 ?>

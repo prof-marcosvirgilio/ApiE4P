@@ -4,10 +4,16 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Set up your database connection
-$servername = "localhost:3306";
-$username = "root";
-$password = "aluno";
-$database = "s4p";
+$servername = "200.98.129.120:3306";
+$username = "marcosvir_e4p";
+$password = "&squadrao4p2023";
+$database = "marcosvir_e4p";
+
+// Add the following lines to set CORS headers
+header("Access-Control-Allow-Origin: *"); // Allow requests from any origin (you can restrict this in a production environment)
+header("Access-Control-Allow-Methods: POST"); // Allow POST requests
+header("Access-Control-Allow-Methods: GET"); // Allow POST requests
+header("Access-Control-Allow-Headers: Content-Type"); // Allow Content-Type header
 
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$database", $username, $password);
